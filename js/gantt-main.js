@@ -21,6 +21,9 @@ let cellWidth = 44;
 const rowHeight = 56;
 let dragState = null;
 let scrollLeft = 0;
+let deckBoards = [];
+let currentDeckBoard = null;
+let deckMode = false;
 
 async function api(method, path, data) {
 const url = baseUrl + path;
@@ -127,6 +130,82 @@ return el;
 
 function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+async function deckApi(path) {
+var url = OC.generateUrl('/apps/deck/api/v1.0' + path);
+var resp = await fetch(url, {
+headers: { 'Content-Type': 'application/json', 'requesttoken': OC.requestToken, 'OCS-APIRequest': 'true' },
+});
+if (!resp.ok) throw new Error('Deck API error: ' + resp.status);
+return resp.json();
+}
+
+function mapDeckCardsToTasks(stacks) {
+var allTasks = [];
+var totalStacks = stacks.length;
+stacks.forEach(function(stack, si) {
+var cards = stack.cards || [];
+cards.forEach(function(card) {
+var endDate, startDate;
+if (card.duedate) {
+endDate = card.duedate.split('T')[0];
+startDate = fmtISO(addDays(new Date(endDate), -7));
+} else {
+var created = card.createdAt ? new Date(card.createdAt * 1000) : new Date();
+startDate = fmtISO(created);
+endDate = fmtISO(addDays(created, 14));
+}
+var progress = totalStacks > 1 ? Math.round((si / (totalStacks - 1)) * 100) : 0;
+var assignee = card.assignedUsers && card.assignedUsers.length > 0
+? card.assignedUsers[0].participant.displayname : null;
+var labelName = card.labels && card.labels.length > 0 ? card.labels[0].title : stack.title;
+var labelColor = card.labels && card.labels.length > 0 ? '#' + card.labels[0].color : null;
+allTasks.push({
+id: 'deck-' + card.id,
+title: card.title,
+description: card.description || '',
+startDate: startDate,
+endDate: endDate,
+progress: progress,
+color: labelColor || getCategoryColor(stack.title),
+category: stack.title,
+assignee: assignee,
+sortOrder: card.order || 0,
+parentId: null,
+dependencyId: null,
+});
+});
+});
+return allTasks;
+}
+
+async function loadDeckBoards() {
+try {
+deckBoards = await deckApi('/boards');
+renderSidebar();
+} catch (e) {
+deckBoards = [];
+}
+}
+
+async function selectDeckBoard(board) {
+deckMode = true;
+currentDeckBoard = board;
+currentProject = null;
+selectedTaskId = null;
+activeFilter = 'all';
+searchQuery = '';
+renderSidebar();
+try {
+var stacks = await deckApi('/boards/' + board.id + '/stacks');
+tasks = mapDeckCardsToTasks(stacks);
+} catch (e) {
+console.error(e);
+tasks = [];
+notify('Deck\u30C7\u30FC\u30BF\u306E\u8AAD\u307F\u8FBC\u307F\u306B\u5931\u6557\u3057\u307E\u3057\u305F');
+}
+renderMain();
+}
+
 function renderSidebar() {
 var nav = document.getElementById('gantt-nav');
 if (!nav) return;
@@ -162,6 +241,27 @@ h('button', { className: 'nav-act-btn danger', title: '\u524A\u9664', onClick: f
 list.appendChild(item);
 });
 nav.appendChild(list);
+
+if (deckBoards.length > 0) {
+nav.appendChild(h('div', { className: 'nav-separator' }));
+nav.appendChild(h('div', { className: 'nav-section-header' }, [
+h('span', { className: 'nav-section-icon' }, '\uD83D\uDDC2\uFE0F'),
+h('span', { className: 'nav-section-title' }, 'Deck\u9023\u643A'),
+]));
+var deckList = h('div', { className: 'nav-list' });
+deckBoards.forEach(function(board) {
+var active = deckMode && currentDeckBoard && currentDeckBoard.id === board.id;
+var item = h('div', {
+className: 'nav-item deck-item' + (active ? ' active' : ''),
+onClick: function() { selectDeckBoard(board); },
+}, [
+h('span', { className: 'nav-item-dot', style: { background: '#' + (board.color || '0082c9') } }),
+h('span', { className: 'nav-item-name' }, board.title),
+]);
+deckList.appendChild(item);
+});
+nav.appendChild(deckList);
+}
 }
 
 function renderMain() {
@@ -169,10 +269,19 @@ var main = document.getElementById('gantt-content');
 if (!main) return;
 main.innerHTML = '';
 
-if (!currentProject) {
+if (!currentProject && !deckMode) {
 main.innerHTML = '<div class="empty-state"><div class="empty-icon">\uD83D\uDCCA</div>'
 + '<h2>\u30AC\u30F3\u30C8\u30C1\u30E3\u30FC\u30C8</h2><p>\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u9078\u629E\u3059\u308B\u304B\u3001\u65B0\u3057\u304F\u4F5C\u6210\u3057\u3066\u304F\u3060\u3055\u3044\u3002</p></div>';
 return;
+}
+
+if (deckMode && currentDeckBoard) {
+var deckHeader = h('div', { className: 'deck-mode-header' }, [
+h('span', { className: 'deck-mode-icon' }, '\uD83D\uDDC2\uFE0F'),
+h('span', { className: 'deck-mode-title' }, 'Deck: ' + currentDeckBoard.title),
+h('span', { className: 'deck-mode-badge' }, '\u8AAD\u307F\u53D6\u308A\u5C02\u7528'),
+]);
+main.appendChild(deckHeader);
 }
 
 var toolbar = h('div', { className: 'toolbar' });
@@ -193,7 +302,9 @@ placeholder: '\u30BF\u30B9\u30AF\u30FB\u62C5\u5F53\u8005\u3092\u691C\u7D22...',
 searchInput.value = searchQuery;
 searchInput.addEventListener('input', function(e) { searchQuery = e.target.value; renderMain(); });
 right.appendChild(searchInput);
+if (!deckMode) {
 right.appendChild(h('button', { className: 'btn-primary', onClick: function() { showTaskModal(null); } }, '\uFF0B \u30BF\u30B9\u30AF\u8FFD\u52A0'));
+}
 toolbar.appendChild(right);
 main.appendChild(toolbar);
 
@@ -245,7 +356,7 @@ h('span', { className: 'progress-pct' }, task.progress + '%'),
 ]);
 
 // Context: double click row to edit
-row.addEventListener('dblclick', function(e) { e.stopPropagation(); showTaskModal(task); });
+row.addEventListener('dblclick', function(e) { e.stopPropagation(); if (!deckMode) showTaskModal(task); });
 tl.appendChild(row);
 });
 gantt.appendChild(tl);
@@ -353,7 +464,7 @@ else if (e.target.classList.contains('rh-r')) startDrag(e, task, 'resize-right')
 else startDrag(e, task, 'move');
 });
 
-bar.addEventListener('dblclick', function(e) { e.stopPropagation(); showTaskModal(task); });
+bar.addEventListener('dblclick', function(e) { e.stopPropagation(); if (!deckMode) showTaskModal(task); });
 tlBody.appendChild(bar);
 });
 
@@ -381,6 +492,7 @@ onClick: function() { activeFilter = key; renderMain(); },
 }
 
 function startDrag(e, task, mode) {
+if (deckMode) return;
 e.preventDefault();
 dragState = { task: task, mode: mode, x0: e.clientX, origStart: task.startDate, origEnd: task.endDate };
 document.body.style.cursor = mode === 'move' ? 'grabbing' : 'col-resize';
@@ -593,6 +705,8 @@ catch (e) { console.error(e); notify('\u8AAD\u307F\u8FBC\u307F\u306B\u5931\u6557
 }
 
 async function selectProject(p) {
+deckMode = false;
+currentDeckBoard = null;
 currentProject = p;
 renderSidebar();
 try { tasks = await api('GET', '/api/projects/' + p.id + '/tasks'); }
@@ -655,6 +769,7 @@ app.innerHTML = '<div class="gantt-layout">'
 + '<main id="gantt-content" class="gantt-main"></main>'
 + '</div>';
 loadProjects();
+loadDeckBoards();
 renderMain();
 });
 })();

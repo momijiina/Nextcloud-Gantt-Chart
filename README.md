@@ -1,8 +1,12 @@
 # Gantt Chart for Nextcloud
-
-Nextcloud用のガントチャートアプリケーションです。プロジェクト管理をビジュアルなタイムラインで行えます。
-
+Nextcloud用のガントチャートアプリケーションです。プロジェクト管理をビジュアルなタイムラインで行えます。<br/>
+テスト開発の為、今後の開発は不明<br/>
 **作成者**: momijiina
+
+<img width="1913" height="983" alt="image" src="https://github.com/user-attachments/assets/278f3858-5fc4-4e1b-bc6d-4873ea3f54af" />
+
+<img width="1909" height="978" alt="image" src="https://github.com/user-attachments/assets/8ebefc1f-a744-45ae-b7c2-6dd2ae393cc7" />
+
 
 ## 対応バージョン
 
@@ -81,7 +85,3 @@ gantt/
 - **バックエンド**: PHP 8.1+ / Nextcloud OCP AppFramework
 - **フロントエンド**: Vanilla JavaScript（ビルドツール不要）
 - **データベース**: Nextcloud DB抽象化レイヤー（MySQL/PostgreSQL/SQLite）
-
-## ライセンス
-
-AGPL-3.0-or-later
