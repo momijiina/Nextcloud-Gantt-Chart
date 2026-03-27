@@ -85,7 +85,3 @@ gantt/
 - **バックエンド**: PHP 8.1+ / Nextcloud OCP AppFramework
 - **フロントエンド**: Vanilla JavaScript（ビルドツール不要）
 - **データベース**: Nextcloud DB抽象化レイヤー（MySQL/PostgreSQL/SQLite）
-
-## ライセンス
-
-AGPL-3.0-or-later
