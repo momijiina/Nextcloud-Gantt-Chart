@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+    <id>gantt</id>
+    <name>Gantt Chart</name>
+    <summary>Project management with Gantt charts</summary>
+    <description><![CDATA[
+A Gantt chart application for Nextcloud that allows you to create and manage projects with visual timeline views.
+
+## Features
+- Create multiple projects
+- Add tasks with start/end dates, progress, and dependencies
+- Visual Gantt chart timeline view
+- Drag and resize tasks
+- Task dependencies (finish-to-start)
+- Color-coded task groups
+- Export capabilities
+    ]]></description>
+    <version>1.0.0</version>
+    <licence>agpl</licence>
+    <author>momijiina</author>
+    <namespace>Gantt</namespace>
+    <category>organization</category>
+    <bugs></bugs>
+    <dependencies>
+        <nextcloud min-version="31" max-version="32"/>
+    </dependencies>
+    <navigations>
+        <navigation>
+            <name>Gantt Chart</name>
+            <route>gantt.page.index</route>
+            <icon>app.svg</icon>
+            <order>10</order>
+        </navigation>
+    </navigations>
+</info>
