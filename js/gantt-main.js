@@ -20,10 +20,12 @@ let searchQuery = '';
 let cellWidth = 44;
 const rowHeight = 56;
 let dragState = null;
+let dragDateRange = null;
 let scrollLeft = 0;
 let deckBoards = [];
 let currentDeckBoard = null;
 let deckMode = false;
+let deckEnabled = localStorage.getItem('gantt-deck-enabled') === 'true';
 
 async function api(method, path, data) {
 const url = baseUrl + path;
@@ -93,6 +95,9 @@ return filtered;
 }
 
 function getDateRange() {
+if (dragState && dragDateRange) {
+return dragDateRange;
+}
 var ft = getFilteredTasks();
 var today = todayDate();
 if (ft.length === 0) {
@@ -179,6 +184,7 @@ return allTasks;
 }
 
 async function loadDeckBoards() {
+if (!deckEnabled) { deckBoards = []; return; }
 try {
 deckBoards = await deckApi('/boards');
 renderSidebar();
@@ -242,7 +248,7 @@ list.appendChild(item);
 });
 nav.appendChild(list);
 
-if (deckBoards.length > 0) {
+if (deckEnabled && deckBoards.length > 0) {
 nav.appendChild(h('div', { className: 'nav-separator' }));
 nav.appendChild(h('div', { className: 'nav-section-header' }, [
 h('span', { className: 'nav-section-icon' }, '\uD83D\uDDC2\uFE0F'),
@@ -262,6 +268,67 @@ deckList.appendChild(item);
 });
 nav.appendChild(deckList);
 }
+
+// Settings button at bottom
+var settingsArea = h('div', { className: 'nav-settings' });
+
+var settingsBtn = h('button', {
+className: 'nav-settings-btn',
+onClick: function() { showSettingsModal(); },
+}, [
+h('span', { className: 'nav-settings-icon', innerHTML: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' }),
+h('span', { className: 'nav-settings-text' }, '\u8A2D\u5B9A'),
+]);
+settingsArea.appendChild(settingsBtn);
+nav.appendChild(settingsArea);
+}
+
+function showSettingsModal() {
+removeModal();
+var overlay = h('div', { className: 'modal-overlay', id: 'gantt-modal' });
+overlay.addEventListener('click', function(e) { if (e.target === overlay) removeModal(); });
+
+var dialog = h('div', { className: 'modal-dialog settings-modal' });
+
+// Header
+var header = h('div', { className: 'modal-header' }, [
+h('h3', null, '\u30AC\u30F3\u30C8\u30C1\u30E3\u30FC\u30C8\u8A2D\u5B9A'),
+h('button', { className: 'modal-close', onClick: removeModal }, '\u2715'),
+]);
+dialog.appendChild(header);
+
+// Body
+var body = h('div', { className: 'modal-body' });
+
+// Section: 連携
+var sectionTitle1 = h('h4', { className: 'settings-section-title' }, '\u9023\u643A');
+body.appendChild(sectionTitle1);
+
+// Deck連携 row
+var deckRow = h('div', { className: 'settings-modal-row' });
+var deckLabel = h('label', { className: 'settings-modal-label', for: 'sm-deck-toggle' }, 'Deck\u30A2\u30D7\u30EA\u3068\u9023\u643A\u3059\u308B');
+deckRow.appendChild(deckLabel);
+var deckToggle = h('label', { className: 'settings-toggle' });
+var deckCheck = h('input', { type: 'checkbox', id: 'sm-deck-toggle' });
+deckCheck.checked = deckEnabled;
+deckCheck.addEventListener('change', function() {
+deckEnabled = this.checked;
+localStorage.setItem('gantt-deck-enabled', deckEnabled ? 'true' : 'false');
+if (!deckEnabled) {
+deckBoards = [];
+if (deckMode) { deckMode = false; currentDeckBoard = null; tasks = []; renderMain(); }
+}
+renderSidebar();
+if (deckEnabled) loadDeckBoards();
+});
+deckToggle.appendChild(deckCheck);
+deckToggle.appendChild(h('span', { className: 'settings-toggle-slider' }));
+deckRow.appendChild(deckToggle);
+body.appendChild(deckRow);
+
+dialog.appendChild(body);
+overlay.appendChild(dialog);
+document.body.appendChild(overlay);
 }
 
 function renderMain() {
@@ -300,7 +367,16 @@ type: 'text',
 placeholder: '\u30BF\u30B9\u30AF\u30FB\u62C5\u5F53\u8005\u3092\u691C\u7D22...',
 });
 searchInput.value = searchQuery;
-searchInput.addEventListener('input', function(e) { searchQuery = e.target.value; renderMain(); });
+searchInput.addEventListener('input', function(e) {
+var cursorPos = e.target.selectionStart;
+searchQuery = e.target.value;
+renderMain();
+var newInput = document.querySelector('.search-input');
+if (newInput) {
+newInput.focus();
+newInput.setSelectionRange(cursorPos, cursorPos);
+}
+});
 right.appendChild(searchInput);
 if (!deckMode) {
 right.appendChild(h('button', { className: 'btn-primary', onClick: function() { showTaskModal(null); } }, '\uFF0B \u30BF\u30B9\u30AF\u8FFD\u52A0'));
@@ -494,6 +570,7 @@ onClick: function() { activeFilter = key; renderMain(); },
 function startDrag(e, task, mode) {
 if (deckMode) return;
 e.preventDefault();
+dragDateRange = getDateRange();
 dragState = { task: task, mode: mode, x0: e.clientX, origStart: task.startDate, origEnd: task.endDate };
 document.body.style.cursor = mode === 'move' ? 'grabbing' : 'col-resize';
 }
@@ -519,10 +596,13 @@ document.addEventListener('mouseup', function() {
 if (!dragState) return;
 document.body.style.cursor = '';
 var t = dragState.task;
-if (t.startDate !== dragState.origStart || t.endDate !== dragState.origEnd) {
-saveTaskToServer(t);
-}
+var changed = t.startDate !== dragState.origStart || t.endDate !== dragState.origEnd;
 dragState = null;
+dragDateRange = null;
+if (changed) {
+saveTaskToServer(t);
+renderMain();
+}
 });
 
 function showProjectModal(project) {
@@ -715,7 +795,11 @@ renderMain();
 }
 
 async function deleteProject(p) {
-if (!confirm('\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u300C' + p.title + '\u300D\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F')) return;
+showConfirmModal(
+'\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u524A\u9664',
+'\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u300C' + p.title + '\u300D\u3068\u3059\u3079\u3066\u306E\u30BF\u30B9\u30AF\u3092\u524A\u9664\u3057\u307E\u3059\u3002\u3053\u306E\u64CD\u4F5C\u306F\u5143\u306B\u623B\u305B\u307E\u305B\u3093\u3002',
+'\u524A\u9664',
+async function() {
 try {
 await api('DELETE', '/api/projects/' + p.id);
 projects = projects.filter(function(x) { return x.id !== p.id; });
@@ -723,6 +807,8 @@ if (currentProject && currentProject.id === p.id) { currentProject = null; tasks
 renderSidebar(); renderMain();
 notify('\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u524A\u9664\u3057\u307E\u3057\u305F');
 } catch (e) { console.error(e); notify('\u524A\u9664\u306B\u5931\u6557\u3057\u307E\u3057\u305F'); }
+}
+);
 }
 
 async function saveTaskToServer(task) {
@@ -737,7 +823,7 @@ category: task.category, assignee: task.assignee,
 };
 var up = await api('PUT', '/api/projects/' + currentProject.id + '/tasks/' + task.id, data);
 var idx = tasks.findIndex(function(t) { return t.id === task.id; });
-if (idx !== -1) tasks[idx] = up;
+if (idx !== -1) Object.assign(tasks[idx], up);
 } catch (e) {
 console.error(e);
 notify('\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F');
@@ -747,7 +833,11 @@ renderMain();
 }
 
 async function deleteTask(task) {
-if (!confirm('\u30BF\u30B9\u30AF\u300C' + task.title + '\u300D\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F')) return;
+showConfirmModal(
+'\u30BF\u30B9\u30AF\u306E\u524A\u9664',
+'\u30BF\u30B9\u30AF\u300C' + task.title + '\u300D\u3092\u524A\u9664\u3057\u307E\u3059\u3002\u3053\u306E\u64CD\u4F5C\u306F\u5143\u306B\u623B\u305B\u307E\u305B\u3093\u3002',
+'\u524A\u9664',
+async function() {
 try {
 await api('DELETE', '/api/projects/' + currentProject.id + '/tasks/' + task.id);
 tasks = tasks.filter(function(t) { return t.id !== task.id; });
@@ -756,9 +846,37 @@ renderMain();
 notify('\u30BF\u30B9\u30AF\u3092\u524A\u9664\u3057\u307E\u3057\u305F');
 } catch (e) { console.error(e); notify('\u524A\u9664\u306B\u5931\u6557\u3057\u307E\u3057\u305F'); }
 }
+);
+}
 
 function notify(msg) {
 if (typeof OC !== 'undefined' && OC.Notification) OC.Notification.showTemporary(msg);
+}
+
+function showConfirmModal(title, message, confirmLabel, onConfirm) {
+removeModal();
+var overlay = h('div', { className: 'modal-overlay', id: 'gantt-modal' });
+overlay.addEventListener('click', function(e) { if (e.target === overlay) removeModal(); });
+
+var dialog = h('div', { className: 'modal-dialog confirm-modal' });
+
+var header = h('div', { className: 'modal-header' }, [
+h('h3', null, title),
+h('button', { className: 'modal-close', onClick: removeModal }, '\u2715'),
+]);
+dialog.appendChild(header);
+
+var body = h('div', { className: 'modal-body' });
+body.appendChild(h('p', { className: 'confirm-message' }, message));
+dialog.appendChild(body);
+
+var footer = h('div', { className: 'modal-footer' });
+footer.appendChild(h('button', { className: 'btn-cancel', onClick: removeModal }, '\u30AD\u30E3\u30F3\u30BB\u30EB'));
+footer.appendChild(h('button', { className: 'btn-danger', onClick: function() { removeModal(); onConfirm(); } }, confirmLabel));
+dialog.appendChild(footer);
+
+overlay.appendChild(dialog);
+document.body.appendChild(overlay);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
