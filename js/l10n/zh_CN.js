@@ -57,7 +57,9 @@ OC.L10N.register(
     "Task deleted" : "任务已删除",
     "Task Name" : "任务名称",
     "Task updated" : "任务已更新",
+    "Task Details" : "任务详情",
     "Today" : "今天",
-    "Uncategorized" : "未分类"
+    "Uncategorized" : "未分类",
+    "Open in Deck" : "在 Deck 中打开"
 },
 "nplurals=1; plural=0;");

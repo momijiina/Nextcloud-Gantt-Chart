@@ -151,6 +151,19 @@ return el;
 
 function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+function simpleMd(text) {
+    var s = esc(text);
+    s = s.replace(/^#{1,3}\s+(.+)$/gm, '<strong class="md-heading">$1</strong>');
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    s = s.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
+    s = s.replace(/((?:<li>[\s\S]*?<\/li>\s*)+)/g, '<ul>$1</ul>');
+    s = s.replace(/\n\n+/g, '</p><p>');
+    s = s.replace(/\n/g, '<br>');
+    return '<p>' + s + '</p>';
+}
+
 async function deckApi(path) {
 var url = OC.generateUrl('/apps/deck/api/v1.0' + path);
 var resp = await fetch(url, {
@@ -454,7 +467,7 @@ h('span', { className: 'progress-pct' }, task.progress + '%'),
 ]);
 
 // Context: double click row to edit
-row.addEventListener('dblclick', function(e) { e.stopPropagation(); if (!deckMode) showTaskModal(task); });
+row.addEventListener('dblclick', function(e) { e.stopPropagation(); if (deckMode) showDeckDetailModal(task); else showTaskModal(task); });
 tl.appendChild(row);
 });
 gantt.appendChild(tl);
@@ -562,7 +575,7 @@ else if (e.target.classList.contains('rh-r')) startDrag(e, task, 'resize-right')
 else startDrag(e, task, 'move');
 });
 
-bar.addEventListener('dblclick', function(e) { e.stopPropagation(); if (!deckMode) showTaskModal(task); });
+bar.addEventListener('dblclick', function(e) { e.stopPropagation(); if (deckMode) showDeckDetailModal(task); else showTaskModal(task); });
 tlBody.appendChild(bar);
 });
 
@@ -708,6 +721,39 @@ notify(isEdit ? _t('Project updated') : _t('Project created'));
 } catch (e) { console.error(e); notify(_t('Failed to save')); }
 };
 document.getElementById('pf-title').focus();
+}
+
+function showDeckDetailModal(task) {
+removeModal();
+var cardId = String(task.id).replace('deck-', '');
+var catInfo = getCategoryInfo(task.category);
+
+var overlay = h('div', { className: 'modal-overlay', id: 'gantt-modal' });
+overlay.addEventListener('click', function(e) { if (e.target === overlay) removeModal(); });
+
+var dialog = h('div', { className: 'modal-dialog modal-wide' });
+dialog.innerHTML = '<div class="modal-header">'
++ '<h3>' + _t('Task Details') + '</h3>'
++ '<button class="modal-close" id="modal-close-btn">\u2715</button>'
++ '</div>'
++ '<div class="modal-body">'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Task Name') + '</span><span class="deck-detail-value">' + esc(task.title) + '</span></div>'
++ (task.description ? '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Description') + '</span><div class="deck-detail-value deck-detail-desc">' + simpleMd(task.description) + '</div></div>' : '')
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Category') + '</span><span class="deck-detail-value"><span class="cat-badge" style="background:' + catInfo.color + '22;color:' + catInfo.color + ';border-color:' + catInfo.color + '">' + esc(catInfo.label) + '</span></span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Assignee') + '</span><span class="deck-detail-value">' + esc(task.assignee || _t('None')) + '</span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Start Date') + '</span><span class="deck-detail-value">' + task.startDate + '</span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('End Date') + '</span><span class="deck-detail-value">' + task.endDate + '</span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Progress') + '</span><span class="deck-detail-value">' + task.progress + '%</span></div>'
++ '</div>'
++ '<div class="modal-footer">'
++ '<a class="btn-primary" id="deck-open-btn" href="' + OC.generateUrl('/apps/deck') + '/#/board/' + (currentDeckBoard ? currentDeckBoard.id : '') + '/card/' + cardId + '" target="_blank">' + _t('Open in Deck') + '</a>'
++ '<button class="btn-cancel" id="deck-close-btn">' + _t('Cancel') + '</button>'
++ '</div>';
+overlay.appendChild(dialog);
+document.body.appendChild(overlay);
+
+document.getElementById('modal-close-btn').onclick = removeModal;
+document.getElementById('deck-close-btn').onclick = removeModal;
 }
 
 function showTaskModal(task) {

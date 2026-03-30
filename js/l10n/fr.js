@@ -57,7 +57,9 @@ OC.L10N.register(
     "Task deleted" : "Tâche supprimée",
     "Task Name" : "Nom de la tâche",
     "Task updated" : "Tâche mise à jour",
+    "Task Details" : "Détails de la tâche",
     "Today" : "Aujourd'hui",
-    "Uncategorized" : "Non classé"
+    "Uncategorized" : "Non classé",
+    "Open in Deck" : "Ouvrir dans Deck"
 },
 "nplurals=2; plural=(n > 1);");
