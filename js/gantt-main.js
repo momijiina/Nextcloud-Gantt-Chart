@@ -437,7 +437,21 @@ type: 'text',
 placeholder: _t('Search tasks and assignees...'),
 });
 searchInput.value = searchQuery;
+var isComposing = false;
+searchInput.addEventListener('compositionstart', function() { isComposing = true; });
+searchInput.addEventListener('compositionend', function(e) {
+isComposing = false;
+var cursorPos = e.target.selectionStart;
+searchQuery = e.target.value;
+renderMain();
+var newInput = document.querySelector('.search-input');
+if (newInput) {
+newInput.focus();
+newInput.setSelectionRange(cursorPos, cursorPos);
+}
+});
 searchInput.addEventListener('input', function(e) {
+if (isComposing) return;
 var cursorPos = e.target.selectionStart;
 searchQuery = e.target.value;
 renderMain();

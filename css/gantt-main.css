@@ -1011,6 +1011,7 @@
     font-family: inherit;
     box-sizing: border-box;
     transition: border-color 0.2s, box-shadow 0.2s;
+    min-height: 44px;
 }
 
 .field input:focus,
