@@ -433,6 +433,26 @@
     gap: 10px;
 }
 
+.btn-today {
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+}
+
+.btn-today:hover {
+    background: #f1f5f9;
+    border-color: #6366f1;
+    color: #6366f1;
+    box-shadow: 0 1px 4px rgba(99,102,241,0.12);
+}
+
 .search-input {
     padding: 8px 14px;
     border: 1px solid #e2e8f0;

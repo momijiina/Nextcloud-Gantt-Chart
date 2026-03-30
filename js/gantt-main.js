@@ -377,6 +377,7 @@ filters.appendChild(makeFilterPill(cat, cat));
 toolbar.appendChild(filters);
 
 var right = h('div', { className: 'toolbar-right' });
+right.appendChild(h('button', { className: 'btn-today', onClick: function() { scrollToToday(); } }, _t('Today')));
 var searchInput = h('input', {
 className: 'search-input',
 type: 'text',
@@ -428,7 +429,12 @@ ft.forEach(function(task) {
 var catInfo = getCategoryInfo(task.category);
 var row = h('div', {
 className: 'tl-row' + (selectedTaskId === task.id ? ' selected' : ''),
-onClick: function() { selectedTaskId = selectedTaskId === task.id ? null : task.id; renderMain(); },
+onClick: function() {
+  var wasSelected = selectedTaskId === task.id;
+  selectedTaskId = wasSelected ? null : task.id;
+  renderMain();
+  if (!wasSelected) scrollToTask(task);
+},
 }, [
 h('div', { className: 'tl-name-cell' }, [
 h('div', { className: 'tl-task-title' }, task.title),
@@ -567,6 +573,33 @@ main.appendChild(gantt);
 var tlEl = document.getElementById('gantt-timeline');
 if (tlEl) tlEl.scrollLeft = scrollLeft;
 if (tlEl) tlEl.addEventListener('scroll', function() { scrollLeft = tlEl.scrollLeft; });
+if (pendingScrollTarget) {
+  var target = pendingScrollTarget;
+  pendingScrollTarget = null;
+  requestAnimationFrame(function() { scrollTimelineTo(target); });
+}
+}
+
+var pendingScrollTarget = null;
+
+function scrollTimelineTo(dayOffset) {
+var tlEl = document.getElementById('gantt-timeline');
+if (!tlEl) return;
+var targetX = dayOffset * cellWidth - tlEl.clientWidth / 3;
+tlEl.scrollTo({ left: Math.max(0, targetX), behavior: 'smooth' });
+}
+
+function scrollToToday() {
+var range = getDateRange();
+var today = todayDate();
+var offset = daysBetween(range.start, today);
+scrollTimelineTo(offset);
+}
+
+function scrollToTask(task) {
+var range = getDateRange();
+var offset = daysBetween(range.start, task.startDate);
+scrollTimelineTo(offset);
 }
 
 function makeFilterPill(key, label) {

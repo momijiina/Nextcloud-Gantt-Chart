@@ -57,6 +57,7 @@ OC.L10N.register(
     "Task deleted" : "任务已删除",
     "Task Name" : "任务名称",
     "Task updated" : "任务已更新",
+    "Today" : "今天",
     "Uncategorized" : "未分类"
 },
 "nplurals=1; plural=0;");

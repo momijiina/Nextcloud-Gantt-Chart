@@ -57,6 +57,7 @@ OC.L10N.register(
     "Task deleted" : "작업이 삭제되었습니다",
     "Task Name" : "작업명",
     "Task updated" : "작업이 업데이트되었습니다",
+    "Today" : "오늘",
     "Uncategorized" : "미분류"
 },
 "nplurals=1; plural=0;");

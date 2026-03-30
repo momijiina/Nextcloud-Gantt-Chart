@@ -57,6 +57,7 @@ OC.L10N.register(
     "Task deleted" : "Tâche supprimée",
     "Task Name" : "Nom de la tâche",
     "Task updated" : "Tâche mise à jour",
+    "Today" : "Aujourd'hui",
     "Uncategorized" : "Non classé"
 },
 "nplurals=2; plural=(n > 1);");
