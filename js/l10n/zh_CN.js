@@ -63,6 +63,11 @@ OC.L10N.register(
     "Open in Deck" : "在 Deck 中打开",
     "Due Date" : "截止日期",
     "Fullscreen" : "全屏",
-    "Close" : "关闭"
+    "Close" : "关闭",
+    "Display" : "显示",
+    "Task Sort Order" : "任务排序",
+    "Default" : "默认",
+    "Ascending" : "升序",
+    "Descending" : "降序"
 },
 "nplurals=1; plural=0;");

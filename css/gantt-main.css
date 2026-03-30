@@ -346,6 +346,30 @@
     transform: translateX(20px);
 }
 
+.settings-select {
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 13px;
+    color: #334155;
+    cursor: pointer;
+    min-width: 180px;
+}
+
+.settings-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 16px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.settings-section-title:first-child { margin-top: 0; }
+
 /* ─── Main ─── */
 .gantt-main {
     flex: 1;

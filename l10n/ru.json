@@ -61,5 +61,10 @@
     "Open in Deck" : "Открыть в Deck",
     "Due Date" : "Срок",
     "Fullscreen" : "Полный экран",
-    "Close" : "Закрыть"
+    "Close" : "Закрыть",
+    "Display" : "Отображение",
+    "Task Sort Order" : "Сортировка задач",
+    "Default" : "По умолчанию",
+    "Ascending" : "По возрастанию",
+    "Descending" : "По убыванию"
 },"plurals": { } }

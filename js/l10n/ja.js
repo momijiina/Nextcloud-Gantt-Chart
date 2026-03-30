@@ -63,6 +63,11 @@ OC.L10N.register(
     "Open in Deck" : "Deckで開く",
     "Due Date" : "締切日",
     "Fullscreen" : "フルスクリーン",
-    "Close" : "閉じる"
+    "Close" : "閉じる",
+    "Display" : "表示",
+    "Task Sort Order" : "タスク並び替え",
+    "Default" : "デフォルト",
+    "Ascending" : "昇順",
+    "Descending" : "降順"
 },
 "nplurals=1; plural=0;");

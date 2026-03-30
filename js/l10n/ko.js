@@ -63,6 +63,11 @@ OC.L10N.register(
     "Open in Deck" : "Deck에서 열기",
     "Due Date" : "마감일",
     "Fullscreen" : "전체 화면",
-    "Close" : "닫기"
+    "Close" : "닫기",
+    "Display" : "표시",
+    "Task Sort Order" : "작업 정렬",
+    "Default" : "기본",
+    "Ascending" : "오름차순",
+    "Descending" : "내림차순"
 },
 "nplurals=1; plural=0;");

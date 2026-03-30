@@ -42,6 +42,7 @@ let deckBoards = [];
 let currentDeckBoard = null;
 let deckMode = false;
 let deckEnabled = localStorage.getItem('gantt-deck-enabled') === 'true';
+let taskSortOrder = localStorage.getItem('gantt-sort-order') || 'default';
 
 async function api(method, path, data) {
 const url = baseUrl + path;
@@ -106,6 +107,11 @@ filtered = filtered.filter(function(t) {
 return (t.title && t.title.toLowerCase().indexOf(q) !== -1) ||
 (t.assignee && t.assignee.toLowerCase().indexOf(q) !== -1);
 });
+}
+if (taskSortOrder === 'start-asc') {
+filtered = filtered.slice().sort(function(a,b) { return a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0; });
+} else if (taskSortOrder === 'start-desc') {
+filtered = filtered.slice().sort(function(a,b) { return a.startDate > b.startDate ? -1 : a.startDate < b.startDate ? 1 : 0; });
 }
 return filtered;
 }
@@ -363,6 +369,32 @@ deckToggle.appendChild(deckCheck);
 deckToggle.appendChild(h('span', { className: 'settings-toggle-slider' }));
 deckRow.appendChild(deckToggle);
 body.appendChild(deckRow);
+
+// Section: 表示
+var sectionTitle2 = h('h4', { className: 'settings-section-title' }, _t('Display'));
+body.appendChild(sectionTitle2);
+
+var sortRow = h('div', { className: 'settings-modal-row' });
+var sortLabel = h('label', { className: 'settings-modal-label' }, _t('Task Sort Order'));
+sortRow.appendChild(sortLabel);
+var sortSelect = h('select', { className: 'settings-select', id: 'sm-sort-order' });
+var sortOptions = [
+{ value: 'default', label: _t('Default') },
+{ value: 'start-asc', label: _t('Start Date') + ' (' + _t('Ascending') + ')' },
+{ value: 'start-desc', label: _t('Start Date') + ' (' + _t('Descending') + ')' },
+];
+sortOptions.forEach(function(opt) {
+var o = h('option', { value: opt.value }, opt.label);
+if (opt.value === taskSortOrder) o.selected = true;
+sortSelect.appendChild(o);
+});
+sortSelect.addEventListener('change', function() {
+taskSortOrder = this.value;
+localStorage.setItem('gantt-sort-order', taskSortOrder);
+renderMain();
+});
+sortRow.appendChild(sortSelect);
+body.appendChild(sortRow);
 
 dialog.appendChild(body);
 overlay.appendChild(dialog);

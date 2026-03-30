@@ -63,6 +63,11 @@ OC.L10N.register(
     "Open in Deck" : "Ouvrir dans Deck",
     "Due Date" : "Date d'échéance",
     "Fullscreen" : "Plein écran",
-    "Close" : "Fermer"
+    "Close" : "Fermer",
+    "Display" : "Affichage",
+    "Task Sort Order" : "Tri des tâches",
+    "Default" : "Par défaut",
+    "Ascending" : "Croissant",
+    "Descending" : "Décroissant"
 },
 "nplurals=2; plural=(n > 1);");
