@@ -9,7 +9,23 @@ const baseUrl = OC.generateUrl('/apps/gantt');
 
 var PALETTE = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316','#06b6d4','#84cc16','#a855f7','#e11d48'];
 
-const DAY_NAMES = ['\u65E5', '\u6708', '\u706B', '\u6C34', '\u6728', '\u91D1', '\u571F'];
+// i18n helper
+var _locale = 'en';
+try { if (typeof OC !== 'undefined' && OC.getLanguage) _locale = OC.getLanguage().replace('_', '-'); } catch(e) {}
+
+function _t(key, vars) {
+var text = (typeof t === 'function') ? t('gantt', key) : key;
+if (vars) { for (var k in vars) { if (vars.hasOwnProperty(k)) text = text.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]); } }
+return text;
+}
+
+var DAY_NAMES = (function() {
+try {
+var names = [];
+for (var i = 0; i < 7; i++) { var d = new Date(2023, 0, 1 + i); names.push(d.toLocaleDateString(_locale, { weekday: 'short' })); }
+return names;
+} catch(e) { return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; }
+})();
 
 let projects = [];
 let currentProject = null;
@@ -64,7 +80,7 @@ return PALETTE[Math.abs(hash) % PALETTE.length];
 }
 
 function getCategoryInfo(key) {
-if (!key) return { key: '', label: '\u672A\u5206\u985E', color: '#94a3b8' };
+if (!key) return { key: '', label: _t('Uncategorized'), color: '#94a3b8' };
 return { key: key, label: key, color: getCategoryColor(key) };
 }
 
@@ -207,7 +223,7 @@ tasks = mapDeckCardsToTasks(stacks);
 } catch (e) {
 console.error(e);
 tasks = [];
-notify('Deck\u30C7\u30FC\u30BF\u306E\u8AAD\u307F\u8FBC\u307F\u306B\u5931\u6557\u3057\u307E\u3057\u305F');
+notify(_t('Failed to load Deck data'));
 }
 renderMain();
 }
@@ -220,13 +236,13 @@ nav.innerHTML = '';
 nav.appendChild(h('div', { className: 'nav-header' }, [
 h('div', { className: 'nav-logo' }, [
 h('span', { className: 'nav-logo-icon', innerHTML: '\uD83D\uDCCA' }),
-h('span', { className: 'nav-logo-text' }, '\u30AC\u30F3\u30C8\u30C1\u30E3\u30FC\u30C8'),
+h('span', { className: 'nav-logo-text' }, _t('Gantt Chart')),
 ]),
 ]));
 
 var newBtn = h('button', { className: 'nav-new-btn', onClick: function() { showProjectModal(null); } }, [
 h('span', { className: 'nav-new-icon' }, '+'),
-h('span', null, '\u65B0\u3057\u3044\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8'),
+h('span', null, _t('New project')),
 ]);
 nav.appendChild(h('div', { className: 'nav-new-wrap' }, [newBtn]));
 
@@ -240,8 +256,8 @@ onClick: function() { selectProject(p); },
 h('span', { className: 'nav-item-dot', style: { background: p.color || '#0082c9' } }),
 h('span', { className: 'nav-item-name' }, p.title),
 h('div', { className: 'nav-item-actions' }, [
-h('button', { className: 'nav-act-btn', title: '\u7DE8\u96C6', onClick: function(e) { e.stopPropagation(); showProjectModal(p); } }, '\u270E'),
-h('button', { className: 'nav-act-btn danger', title: '\u524A\u9664', onClick: function(e) { e.stopPropagation(); deleteProject(p); } }, '\u2715'),
+h('button', { className: 'nav-act-btn', title: _t('Edit'), onClick: function(e) { e.stopPropagation(); showProjectModal(p); } }, '\u270E'),
+h('button', { className: 'nav-act-btn danger', title: _t('Delete'), onClick: function(e) { e.stopPropagation(); deleteProject(p); } }, '\u2715'),
 ]),
 ]);
 list.appendChild(item);
@@ -252,7 +268,7 @@ if (deckEnabled && deckBoards.length > 0) {
 nav.appendChild(h('div', { className: 'nav-separator' }));
 nav.appendChild(h('div', { className: 'nav-section-header' }, [
 h('span', { className: 'nav-section-icon' }, '\uD83D\uDDC2\uFE0F'),
-h('span', { className: 'nav-section-title' }, 'Deck\u9023\u643A'),
+h('span', { className: 'nav-section-title' }, _t('Deck integration')),
 ]));
 var deckList = h('div', { className: 'nav-list' });
 deckBoards.forEach(function(board) {
@@ -277,7 +293,7 @@ className: 'nav-settings-btn',
 onClick: function() { showSettingsModal(); },
 }, [
 h('span', { className: 'nav-settings-icon', innerHTML: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' }),
-h('span', { className: 'nav-settings-text' }, '\u8A2D\u5B9A'),
+h('span', { className: 'nav-settings-text' }, _t('Settings')),
 ]);
 settingsArea.appendChild(settingsBtn);
 nav.appendChild(settingsArea);
@@ -292,7 +308,7 @@ var dialog = h('div', { className: 'modal-dialog settings-modal' });
 
 // Header
 var header = h('div', { className: 'modal-header' }, [
-h('h3', null, '\u30AC\u30F3\u30C8\u30C1\u30E3\u30FC\u30C8\u8A2D\u5B9A'),
+h('h3', null, _t('Gantt Chart Settings')),
 h('button', { className: 'modal-close', onClick: removeModal }, '\u2715'),
 ]);
 dialog.appendChild(header);
@@ -301,12 +317,12 @@ dialog.appendChild(header);
 var body = h('div', { className: 'modal-body' });
 
 // Section: 連携
-var sectionTitle1 = h('h4', { className: 'settings-section-title' }, '\u9023\u643A');
+var sectionTitle1 = h('h4', { className: 'settings-section-title' }, _t('Integration'));
 body.appendChild(sectionTitle1);
 
 // Deck連携 row
 var deckRow = h('div', { className: 'settings-modal-row' });
-var deckLabel = h('label', { className: 'settings-modal-label', for: 'sm-deck-toggle' }, 'Deck\u30A2\u30D7\u30EA\u3068\u9023\u643A\u3059\u308B');
+var deckLabel = h('label', { className: 'settings-modal-label', for: 'sm-deck-toggle' }, _t('Integrate with Deck app'));
 deckRow.appendChild(deckLabel);
 var deckToggle = h('label', { className: 'settings-toggle' });
 var deckCheck = h('input', { type: 'checkbox', id: 'sm-deck-toggle' });
@@ -338,22 +354,22 @@ main.innerHTML = '';
 
 if (!currentProject && !deckMode) {
 main.innerHTML = '<div class="empty-state"><div class="empty-icon">\uD83D\uDCCA</div>'
-+ '<h2>\u30AC\u30F3\u30C8\u30C1\u30E3\u30FC\u30C8</h2><p>\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u9078\u629E\u3059\u308B\u304B\u3001\u65B0\u3057\u304F\u4F5C\u6210\u3057\u3066\u304F\u3060\u3055\u3044\u3002</p></div>';
++ '<h2>' + _t('Gantt Chart') + '</h2><p>' + _t('Select a project or create a new one.') + '</p></div>';
 return;
 }
 
 if (deckMode && currentDeckBoard) {
 var deckHeader = h('div', { className: 'deck-mode-header' }, [
 h('span', { className: 'deck-mode-icon' }, '\uD83D\uDDC2\uFE0F'),
-h('span', { className: 'deck-mode-title' }, 'Deck: ' + currentDeckBoard.title),
-h('span', { className: 'deck-mode-badge' }, '\u8AAD\u307F\u53D6\u308A\u5C02\u7528'),
+h('span', { className: 'deck-mode-title' }, _t('Deck') + ': ' + currentDeckBoard.title),
+h('span', { className: 'deck-mode-badge' }, _t('Read only')),
 ]);
 main.appendChild(deckHeader);
 }
 
 var toolbar = h('div', { className: 'toolbar' });
 var filters = h('div', { className: 'filter-bar' }, [
-makeFilterPill('all', '\u3059\u3079\u3066'),
+makeFilterPill('all', _t('All')),
 ]);
 getUsedCategories().forEach(function(cat) {
 filters.appendChild(makeFilterPill(cat, cat));
@@ -364,7 +380,7 @@ var right = h('div', { className: 'toolbar-right' });
 var searchInput = h('input', {
 className: 'search-input',
 type: 'text',
-placeholder: '\u30BF\u30B9\u30AF\u30FB\u62C5\u5F53\u8005\u3092\u691C\u7D22...',
+placeholder: _t('Search tasks and assignees...'),
 });
 searchInput.value = searchQuery;
 searchInput.addEventListener('input', function(e) {
@@ -379,7 +395,7 @@ newInput.setSelectionRange(cursorPos, cursorPos);
 });
 right.appendChild(searchInput);
 if (!deckMode) {
-right.appendChild(h('button', { className: 'btn-primary', onClick: function() { showTaskModal(null); } }, '\uFF0B \u30BF\u30B9\u30AF\u8FFD\u52A0'));
+right.appendChild(h('button', { className: 'btn-primary', onClick: function() { showTaskModal(null); } }, '\uFF0B ' + _t('Add Task')));
 }
 toolbar.appendChild(right);
 main.appendChild(toolbar);
@@ -387,7 +403,7 @@ main.appendChild(toolbar);
 var ft = getFilteredTasks();
 
 if (ft.length === 0) {
-main.appendChild(h('div', { className: 'empty-tasks' }, '\u30BF\u30B9\u30AF\u304C\u3042\u308A\u307E\u305B\u3093\u3002\u300C\u30BF\u30B9\u30AF\u8FFD\u52A0\u300D\u30DC\u30BF\u30F3\u3067\u8FFD\u52A0\u3057\u3066\u304F\u3060\u3055\u3044\u3002'));
+main.appendChild(h('div', { className: 'empty-tasks' }, _t('No tasks. Add a task to get started.')));
 return;
 }
 
@@ -402,10 +418,10 @@ var gantt = h('div', { className: 'gantt-area' });
 // Task list
 var tl = h('div', { className: 'task-list' });
 tl.appendChild(h('div', { className: 'tl-header' }, [
-h('span', { className: 'tl-h-name' }, '\u30BF\u30B9\u30AF\u540D'),
-h('span', { className: 'tl-h-cat' }, '\u30AB\u30C6\u30B4\u30EA'),
-h('span', { className: 'tl-h-assignee' }, '\u62C5\u5F53'),
-h('span', { className: 'tl-h-progress' }, '\u9032\u6357'),
+h('span', { className: 'tl-h-name' }, _t('Task')),
+h('span', { className: 'tl-h-cat' }, _t('Category')),
+h('span', { className: 'tl-h-assignee' }, _t('Assign')),
+h('span', { className: 'tl-h-progress' }, _t('Progress')),
 ]));
 
 ft.forEach(function(task) {
@@ -453,7 +469,7 @@ if (curMonth !== -1) {
 monthRow.appendChild(h('div', {
 className: 'tl-month-cell',
 style: { left: monthStart * cellWidth + 'px', width: (i - monthStart) * cellWidth + 'px' },
-}, addDays(range.start, monthStart).toLocaleString('ja', { year: 'numeric', month: 'long' })));
+}, addDays(range.start, monthStart).toLocaleDateString(_locale, { year: 'numeric', month: 'long' })));
 }
 curMonth = m;
 monthStart = i;
@@ -462,7 +478,7 @@ monthStart = i;
 monthRow.appendChild(h('div', {
 className: 'tl-month-cell',
 style: { left: monthStart * cellWidth + 'px', width: (totalDays - monthStart) * cellWidth + 'px' },
-}, addDays(range.start, monthStart).toLocaleString('ja', { year: 'numeric', month: 'long' })));
+}, addDays(range.start, monthStart).toLocaleDateString(_locale, { year: 'numeric', month: 'long' })));
 tlHead.appendChild(monthRow);
 
 // Day row
@@ -526,7 +542,7 @@ top: barTop + 'px',
 height: barHeight + 'px',
 background: catInfo.color,
 },
-title: task.title + ' (' + task.startDate + ' \u2192 ' + task.endDate + ')\n\u9032\u6357: ' + task.progress + '%',
+title: task.title + ' (' + task.startDate + ' \u2192 ' + task.endDate + ')\n' + _t('Progress') + ': ' + task.progress + '%',
 });
 
 bar.appendChild(h('div', { className: 'bar-progress', style: { width: task.progress + '%' } }));
@@ -613,20 +629,20 @@ overlay.addEventListener('click', function(e) { if (e.target === overlay) remove
 
 var dialog = h('div', { className: 'modal-dialog' });
 dialog.innerHTML = '<div class="modal-header">'
-+ '<h3>' + (isEdit ? '\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u7DE8\u96C6' : '\u65B0\u3057\u3044\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8') + '</h3>'
++ '<h3>' + (isEdit ? _t('Edit Project') : _t('New Project')) + '</h3>'
 + '<button class="modal-close" id="modal-close-btn">\u2715</button>'
 + '</div>'
 + '<div class="modal-body">'
-+ '<div class="field"><label>\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u540D</label>'
-+ '<input type="text" id="pf-title" value="' + esc(isEdit ? project.title : '') + '" placeholder="\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u540D\u3092\u5165\u529B" /></div>'
-+ '<div class="field"><label>\u8AAC\u660E</label>'
-+ '<textarea id="pf-desc" rows="2" placeholder="\u8AAC\u660E\uFF08\u4EFB\u610F\uFF09">' + esc(isEdit ? (project.description || '') : '') + '</textarea></div>'
-+ '<div class="field"><label>\u30AB\u30E9\u30FC</label>'
++ '<div class="field"><label>' + _t('Project Name') + '</label>'
++ '<input type="text" id="pf-title" value="' + esc(isEdit ? project.title : '') + '" placeholder="' + _t('Enter project name') + '" /></div>'
++ '<div class="field"><label>' + _t('Description') + '</label>'
++ '<textarea id="pf-desc" rows="2" placeholder="' + _t('Description (optional)') + '">' + esc(isEdit ? (project.description || '') : '') + '</textarea></div>'
++ '<div class="field"><label>' + _t('Color') + '</label>'
 + '<input type="color" id="pf-color" value="' + (isEdit ? (project.color || '#0082c9') : '#0082c9') + '" /></div>'
 + '</div>'
 + '<div class="modal-footer">'
-+ '<button class="btn-cancel" id="pf-cancel">\u30AD\u30E3\u30F3\u30BB\u30EB</button>'
-+ '<button class="btn-primary" id="pf-save">\u4FDD\u5B58</button>'
++ '<button class="btn-cancel" id="pf-cancel">' + _t('Cancel') + '</button>'
++ '<button class="btn-primary" id="pf-save">' + _t('Save') + '</button>'
 + '</div>';
 overlay.appendChild(dialog);
 document.body.appendChild(overlay);
@@ -635,7 +651,7 @@ document.getElementById('modal-close-btn').onclick = removeModal;
 document.getElementById('pf-cancel').onclick = removeModal;
 document.getElementById('pf-save').onclick = async function() {
 var title = document.getElementById('pf-title').value.trim();
-if (!title) { notify('\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u540D\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044'); return; }
+if (!title) { notify(_t('Please enter a project name')); return; }
 var data = {
 title: title,
 description: document.getElementById('pf-desc').value,
@@ -655,8 +671,8 @@ selectProject(np);
 removeModal();
 renderSidebar();
 renderMain();
-notify(isEdit ? '\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u66F4\u65B0\u3057\u307E\u3057\u305F' : '\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u4F5C\u6210\u3057\u307E\u3057\u305F');
-} catch (e) { console.error(e); notify('\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F'); }
+notify(isEdit ? _t('Project updated') : _t('Project created'));
+} catch (e) { console.error(e); notify(_t('Failed to save')); }
 };
 document.getElementById('pf-title').focus();
 }
@@ -679,42 +695,42 @@ var catDatalist = usedCats.map(function(c) { return '<option value="' + esc(c) +
 
 var dialog = h('div', { className: 'modal-dialog modal-wide' });
 dialog.innerHTML = '<div class="modal-header">'
-+ '<h3>' + (isEdit ? '\u30BF\u30B9\u30AF\u7DE8\u96C6' : '\u65B0\u3057\u3044\u30BF\u30B9\u30AF') + '</h3>'
++ '<h3>' + (isEdit ? _t('Edit Task') : _t('New Task')) + '</h3>'
 + '<button class="modal-close" id="modal-close-btn">\u2715</button>'
 + '</div>'
 + '<div class="modal-body">'
-+ '<div class="field"><label>\u30BF\u30B9\u30AF\u540D <span class="required">*</span></label>'
-+ '<input type="text" id="tf-title" value="' + esc(isEdit ? task.title : '') + '" placeholder="\u30BF\u30B9\u30AF\u540D\u3092\u5165\u529B" /></div>'
-+ '<div class="field"><label>\u8AAC\u660E</label>'
-+ '<textarea id="tf-desc" rows="2" placeholder="\u8AAC\u660E\uFF08\u4EFB\u610F\uFF09">' + esc(isEdit ? (task.description || '') : '') + '</textarea></div>'
++ '<div class="field"><label>' + _t('Task Name') + ' <span class="required">*</span></label>'
++ '<input type="text" id="tf-title" value="' + esc(isEdit ? task.title : '') + '" placeholder="' + _t('Enter task name') + '" /></div>'
++ '<div class="field"><label>' + _t('Description') + '</label>'
++ '<textarea id="tf-desc" rows="2" placeholder="' + _t('Description (optional)') + '">' + esc(isEdit ? (task.description || '') : '') + '</textarea></div>'
 + '<div class="field-row">'
-+ '<div class="field"><label>\u958B\u59CB\u65E5 <span class="required">*</span></label>'
++ '<div class="field"><label>' + _t('Start Date') + ' <span class="required">*</span></label>'
 + '<input type="date" id="tf-start" value="' + (isEdit ? task.startDate : todayStr) + '" /></div>'
-+ '<div class="field"><label>\u7D42\u4E86\u65E5 <span class="required">*</span></label>'
++ '<div class="field"><label>' + _t('End Date') + ' <span class="required">*</span></label>'
 + '<input type="date" id="tf-end" value="' + (isEdit ? task.endDate : nextW) + '" /></div>'
 + '</div>'
 + '<div class="field-row">'
-+ '<div class="field"><label>\u30AB\u30C6\u30B4\u30EA</label>'
-+ '<input type="text" id="tf-cat" list="cat-datalist" value="' + esc(isEdit ? (task.category || '') : '') + '" placeholder="\u4F8B: \u958B\u767A, \u4F01\u753B, \u30C7\u30B6\u30A4\u30F3..." />'
++ '<div class="field"><label>' + _t('Category') + '</label>'
++ '<input type="text" id="tf-cat" list="cat-datalist" value="' + esc(isEdit ? (task.category || '') : '') + '" placeholder="' + _t('e.g. Development, Planning, Design...') + '" />'
 + '<datalist id="cat-datalist">' + catDatalist + '</datalist></div>'
-+ '<div class="field"><label>\u62C5\u5F53\u8005</label>'
-+ '<input type="text" id="tf-assignee" value="' + esc(isEdit ? (task.assignee || '') : '') + '" placeholder="\u62C5\u5F53\u8005\u540D" /></div>'
++ '<div class="field"><label>' + _t('Assignee') + '</label>'
++ '<input type="text" id="tf-assignee" value="' + esc(isEdit ? (task.assignee || '') : '') + '" placeholder="' + _t('Assignee name') + '" /></div>'
 + '</div>'
-+ '<div class="field"><label>\u9032\u6357 <span class="progress-val" id="tf-pct-val">' + (isEdit ? task.progress : 0) + '%</span></label>'
++ '<div class="field"><label>' + _t('Progress') + ' <span class="progress-val" id="tf-pct-val">' + (isEdit ? task.progress : 0) + '%</span></label>'
 + '<input type="range" id="tf-progress" min="0" max="100" value="' + (isEdit ? task.progress : 0) + '" class="progress-slider" />'
 + '<div class="progress-bar-preview"><div class="progress-bar-fill" id="tf-pbar" style="width:' + (isEdit ? task.progress : 0) + '%"></div></div></div>'
 + '<div class="field-row">'
-+ '<div class="field"><label>\u4F9D\u5B58\u30BF\u30B9\u30AF</label>'
-+ '<select id="tf-dep"><option value="">\u306A\u3057</option>' + depOptions + '</select></div>'
-+ '<div class="field"><label>\u30AB\u30E9\u30FC</label>'
++ '<div class="field"><label>' + _t('Dependency') + '</label>'
++ '<select id="tf-dep"><option value="">' + _t('None') + '</option>' + depOptions + '</select></div>'
++ '<div class="field"><label>' + _t('Color') + '</label>'
 + '<input type="color" id="tf-color" value="' + (isEdit ? (task.color || '#6366f1') : '#6366f1') + '" /></div>'
 + '</div>'
 + '</div>'
 + '<div class="modal-footer">'
-+ (isEdit ? '<button class="btn-danger" id="tf-delete">\u524A\u9664</button>' : '')
++ (isEdit ? '<button class="btn-danger" id="tf-delete">' + _t('Delete') + '</button>' : '')
 + '<div class="modal-footer-right">'
-+ '<button class="btn-cancel" id="tf-cancel">\u30AD\u30E3\u30F3\u30BB\u30EB</button>'
-+ '<button class="btn-primary" id="tf-save">\u4FDD\u5B58</button>'
++ '<button class="btn-cancel" id="tf-cancel">' + _t('Cancel') + '</button>'
++ '<button class="btn-primary" id="tf-save">' + _t('Save') + '</button>'
 + '</div></div>';
 overlay.appendChild(dialog);
 document.body.appendChild(overlay);
@@ -738,7 +754,7 @@ document.getElementById('tf-delete').onclick = function() { removeModal(); delet
 
 document.getElementById('tf-save').onclick = async function() {
 var title = document.getElementById('tf-title').value.trim();
-if (!title) { notify('\u30BF\u30B9\u30AF\u540D\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044'); return; }
+if (!title) { notify(_t('Please enter a task name')); return; }
 var catVal = document.getElementById('tf-cat').value.trim();
 var catInfo = getCategoryInfo(catVal);
 
@@ -761,15 +777,15 @@ if (isEdit) {
 var up = await api('PUT', '/api/projects/' + currentProject.id + '/tasks/' + task.id, data);
 var idx = tasks.findIndex(function(t) { return t.id === task.id; });
 if (idx !== -1) tasks[idx] = up;
-notify('\u30BF\u30B9\u30AF\u3092\u66F4\u65B0\u3057\u307E\u3057\u305F');
+notify(_t('Task updated'));
 } else {
 var nw = await api('POST', '/api/projects/' + currentProject.id + '/tasks', data);
 tasks.push(nw);
-notify('\u30BF\u30B9\u30AF\u3092\u4F5C\u6210\u3057\u307E\u3057\u305F');
+notify(_t('Task created'));
 }
 removeModal();
 renderMain();
-} catch (e) { console.error(e); notify('\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F'); }
+} catch (e) { console.error(e); notify(_t('Failed to save')); }
 };
 document.getElementById('tf-title').focus();
 }
@@ -781,7 +797,7 @@ if (m) m.remove();
 
 async function loadProjects() {
 try { projects = await api('GET', '/api/projects'); renderSidebar(); }
-catch (e) { console.error(e); notify('\u8AAD\u307F\u8FBC\u307F\u306B\u5931\u6557\u3057\u307E\u3057\u305F'); }
+catch (e) { console.error(e); notify(_t('Failed to load')); }
 }
 
 async function selectProject(p) {
@@ -790,23 +806,23 @@ currentDeckBoard = null;
 currentProject = p;
 renderSidebar();
 try { tasks = await api('GET', '/api/projects/' + p.id + '/tasks'); }
-catch (e) { console.error(e); tasks = []; notify('\u30BF\u30B9\u30AF\u306E\u8AAD\u307F\u8FBC\u307F\u306B\u5931\u6557\u3057\u307E\u3057\u305F'); }
+catch (e) { console.error(e); tasks = []; notify(_t('Failed to load tasks')); }
 renderMain();
 }
 
 async function deleteProject(p) {
 showConfirmModal(
-'\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u524A\u9664',
-'\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u300C' + p.title + '\u300D\u3068\u3059\u3079\u3066\u306E\u30BF\u30B9\u30AF\u3092\u524A\u9664\u3057\u307E\u3059\u3002\u3053\u306E\u64CD\u4F5C\u306F\u5143\u306B\u623B\u305B\u307E\u305B\u3093\u3002',
-'\u524A\u9664',
+_t('Delete Project'),
+_t('Delete project "{title}" and all tasks? This cannot be undone.', { title: p.title }),
+_t('Delete'),
 async function() {
 try {
 await api('DELETE', '/api/projects/' + p.id);
 projects = projects.filter(function(x) { return x.id !== p.id; });
 if (currentProject && currentProject.id === p.id) { currentProject = null; tasks = []; }
 renderSidebar(); renderMain();
-notify('\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u524A\u9664\u3057\u307E\u3057\u305F');
-} catch (e) { console.error(e); notify('\u524A\u9664\u306B\u5931\u6557\u3057\u307E\u3057\u305F'); }
+notify(_t('Project deleted'));
+} catch (e) { console.error(e); notify(_t('Failed to delete')); }
 }
 );
 }
@@ -826,7 +842,7 @@ var idx = tasks.findIndex(function(t) { return t.id === task.id; });
 if (idx !== -1) Object.assign(tasks[idx], up);
 } catch (e) {
 console.error(e);
-notify('\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F');
+notify(_t('Failed to save'));
 tasks = await api('GET', '/api/projects/' + currentProject.id + '/tasks');
 renderMain();
 }
@@ -834,17 +850,17 @@ renderMain();
 
 async function deleteTask(task) {
 showConfirmModal(
-'\u30BF\u30B9\u30AF\u306E\u524A\u9664',
-'\u30BF\u30B9\u30AF\u300C' + task.title + '\u300D\u3092\u524A\u9664\u3057\u307E\u3059\u3002\u3053\u306E\u64CD\u4F5C\u306F\u5143\u306B\u623B\u305B\u307E\u305B\u3093\u3002',
-'\u524A\u9664',
+_t('Delete Task'),
+_t('Delete task "{title}"? This cannot be undone.', { title: task.title }),
+_t('Delete'),
 async function() {
 try {
 await api('DELETE', '/api/projects/' + currentProject.id + '/tasks/' + task.id);
 tasks = tasks.filter(function(t) { return t.id !== task.id; });
 if (selectedTaskId === task.id) selectedTaskId = null;
 renderMain();
-notify('\u30BF\u30B9\u30AF\u3092\u524A\u9664\u3057\u307E\u3057\u305F');
-} catch (e) { console.error(e); notify('\u524A\u9664\u306B\u5931\u6557\u3057\u307E\u3057\u305F'); }
+notify(_t('Task deleted'));
+} catch (e) { console.error(e); notify(_t('Failed to delete')); }
 }
 );
 }
@@ -871,7 +887,7 @@ body.appendChild(h('p', { className: 'confirm-message' }, message));
 dialog.appendChild(body);
 
 var footer = h('div', { className: 'modal-footer' });
-footer.appendChild(h('button', { className: 'btn-cancel', onClick: removeModal }, '\u30AD\u30E3\u30F3\u30BB\u30EB'));
+footer.appendChild(h('button', { className: 'btn-cancel', onClick: removeModal }, _t('Cancel')));
 footer.appendChild(h('button', { className: 'btn-danger', onClick: function() { removeModal(); onConfirm(); } }, confirmLabel));
 dialog.appendChild(footer);
 
