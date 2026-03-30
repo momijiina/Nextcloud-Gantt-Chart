@@ -60,5 +60,6 @@
     "Uncategorized" : "Без категории",
     "Open in Deck" : "Открыть в Deck",
     "Due Date" : "Срок",
-    "Fullscreen" : "Полный экран"
+    "Fullscreen" : "Полный экран",
+    "Close" : "Закрыть"
 },"plurals": { } }

@@ -62,6 +62,7 @@ OC.L10N.register(
     "Uncategorized" : "Non classé",
     "Open in Deck" : "Ouvrir dans Deck",
     "Due Date" : "Date d'échéance",
-    "Fullscreen" : "Plein écran"
+    "Fullscreen" : "Plein écran",
+    "Close" : "Fermer"
 },
 "nplurals=2; plural=(n > 1);");

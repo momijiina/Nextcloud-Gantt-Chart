@@ -62,6 +62,7 @@ OC.L10N.register(
     "Uncategorized" : "未分類",
     "Open in Deck" : "Deckで開く",
     "Due Date" : "締切日",
-    "Fullscreen" : "フルスクリーン"
+    "Fullscreen" : "フルスクリーン",
+    "Close" : "閉じる"
 },
 "nplurals=1; plural=0;");

@@ -755,15 +755,45 @@ notify(isEdit ? _t('Project updated') : _t('Project created'));
 document.getElementById('pf-title').focus();
 }
 
-function showDeckDetailModal(task) {
+function showDeckDetailModal(task, editMode) {
 removeModal();
 var cardId = String(task.id).replace('deck-', '');
 var catInfo = getCategoryInfo(task.category);
+var isEditing = !!editMode;
 
 var overlay = h('div', { className: 'modal-overlay', id: 'gantt-modal' });
 overlay.addEventListener('click', function(e) { if (e.target === overlay) removeModal(); });
 
 var dialog = h('div', { className: 'modal-dialog modal-wide' });
+
+if (!isEditing) {
+// Preview mode
+dialog.innerHTML = '<div class="modal-header">'
++ '<h3>' + _t('Task Details') + '</h3>'
++ '<button class="modal-close" id="modal-close-btn">\u2715</button>'
++ '</div>'
++ '<div class="modal-body">'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Task Name') + '</span><span class="deck-detail-value">' + esc(task.title) + '</span></div>'
++ (task.description ? '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Description') + '</span><div class="deck-detail-value deck-detail-desc">' + simpleMd(task.description) + '</div></div>' : '')
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Category') + '</span><span class="deck-detail-value"><span class="cat-badge" style="background:' + catInfo.color + '22;color:' + catInfo.color + ';border-color:' + catInfo.color + '">' + esc(catInfo.label) + '</span></span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Assignee') + '</span><span class="deck-detail-value">' + esc(task.assignee || _t('None')) + '</span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Start Date') + '</span><span class="deck-detail-value">' + task.startDate + '</span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Due Date') + '</span><span class="deck-detail-value">' + task.endDate + '</span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Progress') + '</span><span class="deck-detail-value">' + task.progress + '%</span></div>'
++ '</div>'
++ '<div class="modal-footer">'
++ '<a class="btn-secondary" id="deck-open-btn" href="' + OC.generateUrl('/apps/deck') + '/#/board/' + (currentDeckBoard ? currentDeckBoard.id : '') + '/card/' + cardId + '" target="_blank">' + _t('Open in Deck') + '</a>'
++ '<div class="modal-footer-right">'
++ '<button class="btn-cancel" id="deck-close-btn">' + _t('Close') + '</button>'
++ '<button class="btn-primary" id="deck-edit-btn">' + _t('Edit') + '</button>'
++ '</div></div>';
+overlay.appendChild(dialog);
+document.body.appendChild(overlay);
+document.getElementById('modal-close-btn').onclick = removeModal;
+document.getElementById('deck-close-btn').onclick = removeModal;
+document.getElementById('deck-edit-btn').onclick = function() { showDeckDetailModal(task, true); };
+} else {
+// Edit mode
 dialog.innerHTML = '<div class="modal-header">'
 + '<h3>' + _t('Edit Task') + '</h3>'
 + '<button class="modal-close" id="modal-close-btn">\u2715</button>'
@@ -790,7 +820,6 @@ dialog.innerHTML = '<div class="modal-header">'
 + '</div></div>';
 overlay.appendChild(dialog);
 document.body.appendChild(overlay);
-
 document.getElementById('modal-close-btn').onclick = removeModal;
 document.getElementById('deck-close-btn').onclick = removeModal;
 document.getElementById('deck-save-btn').onclick = async function() {
@@ -813,10 +842,54 @@ notify(_t('Task updated'));
 };
 document.getElementById('dk-title').focus();
 }
+}
 
-function showTaskModal(task) {
+function showTaskModal(task, editMode) {
 var isEdit = !!task;
+var isEditing = !isEdit || !!editMode;
 removeModal();
+
+if (isEdit && !isEditing) {
+// Preview mode for existing tasks
+var catInfo = getCategoryInfo(task.category);
+var depTask = task.dependencyId ? tasks.find(function(t) { return t.id === task.dependencyId; }) : null;
+
+var overlay = h('div', { className: 'modal-overlay', id: 'gantt-modal' });
+overlay.addEventListener('click', function(e) { if (e.target === overlay) removeModal(); });
+var dialog = h('div', { className: 'modal-dialog modal-wide' });
+dialog.innerHTML = '<div class="modal-header">'
++ '<h3>' + _t('Task Details') + '</h3>'
++ '<button class="modal-close" id="modal-close-btn">\u2715</button>'
++ '</div>'
++ '<div class="modal-body">'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Task Name') + '</span><span class="deck-detail-value">' + esc(task.title) + '</span></div>'
++ (task.description ? '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Description') + '</span><div class="deck-detail-value deck-detail-desc">' + simpleMd(task.description) + '</div></div>' : '')
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Category') + '</span><span class="deck-detail-value"><span class="cat-badge" style="background:' + catInfo.color + '22;color:' + catInfo.color + ';border-color:' + catInfo.color + '">' + esc(catInfo.label) + '</span></span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Assignee') + '</span><span class="deck-detail-value">' + esc(task.assignee || _t('None')) + '</span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Start Date') + '</span><span class="deck-detail-value">' + task.startDate + '</span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('End Date') + '</span><span class="deck-detail-value">' + task.endDate + '</span></div>'
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Progress') + '</span><span class="deck-detail-value">'
++ '<div class="progress-mini" style="width:120px;display:inline-block;vertical-align:middle;margin-right:8px"><div class="progress-mini-fill" style="width:' + task.progress + '%;background:' + catInfo.color + '"></div></div>'
++ task.progress + '%</span></div>'
++ (depTask ? '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Dependency') + '</span><span class="deck-detail-value">' + esc(depTask.title) + '</span></div>' : '')
++ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Color') + '</span><span class="deck-detail-value"><span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:' + (task.color || catInfo.color) + ';vertical-align:middle"></span></span></div>'
++ '</div>'
++ '<div class="modal-footer">'
++ '<button class="btn-danger" id="tf-delete">' + _t('Delete') + '</button>'
++ '<div class="modal-footer-right">'
++ '<button class="btn-cancel" id="tf-close">' + _t('Close') + '</button>'
++ '<button class="btn-primary" id="tf-edit-btn">' + _t('Edit') + '</button>'
++ '</div></div>';
+overlay.appendChild(dialog);
+document.body.appendChild(overlay);
+document.getElementById('modal-close-btn').onclick = removeModal;
+document.getElementById('tf-close').onclick = removeModal;
+document.getElementById('tf-edit-btn').onclick = function() { showTaskModal(task, true); };
+document.getElementById('tf-delete').onclick = function() { removeModal(); deleteTask(task); };
+return;
+}
+
+// Edit mode (new task or editing existing)
 var todayStr = fmtISO(new Date());
 var nextW = fmtISO(addDays(new Date(), 7));
 

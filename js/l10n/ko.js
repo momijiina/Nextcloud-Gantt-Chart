@@ -62,6 +62,7 @@ OC.L10N.register(
     "Uncategorized" : "미분류",
     "Open in Deck" : "Deck에서 열기",
     "Due Date" : "마감일",
-    "Fullscreen" : "전체 화면"
+    "Fullscreen" : "전체 화면",
+    "Close" : "닫기"
 },
 "nplurals=1; plural=0;");

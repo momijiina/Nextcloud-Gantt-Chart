@@ -62,6 +62,7 @@ OC.L10N.register(
     "Uncategorized" : "未分类",
     "Open in Deck" : "在 Deck 中打开",
     "Due Date" : "截止日期",
-    "Fullscreen" : "全屏"
+    "Fullscreen" : "全屏",
+    "Close" : "关闭"
 },
 "nplurals=1; plural=0;");
