@@ -113,7 +113,41 @@ filtered = filtered.slice().sort(function(a,b) { return a.startDate < b.startDat
 } else if (taskSortOrder === 'start-desc') {
 filtered = filtered.slice().sort(function(a,b) { return a.startDate > b.startDate ? -1 : a.startDate < b.startDate ? 1 : 0; });
 }
+// Dependency-aware sort: parent tasks come before their dependents
+filtered = sortByDependency(filtered);
 return filtered;
+}
+
+function sortByDependency(list) {
+var idSet = {};
+list.forEach(function(t) { idSet[t.id] = true; });
+// Build adjacency: parent -> children (tasks that depend on parent)
+var children = {};
+list.forEach(function(t) {
+if (t.dependencyId && idSet[t.dependencyId]) {
+if (!children[t.dependencyId]) children[t.dependencyId] = [];
+children[t.dependencyId].push(t);
+}
+});
+var visited = {};
+var result = [];
+function visit(task) {
+if (visited[task.id]) return;
+visited[task.id] = true;
+result.push(task);
+if (children[task.id]) {
+children[task.id].forEach(function(child) { visit(child); });
+}
+}
+// Start with root tasks (no dependency or dependency not in filtered list)
+list.forEach(function(t) {
+if (!t.dependencyId || !idSet[t.dependencyId]) {
+visit(t);
+}
+});
+// Add any remaining (circular dependency safety)
+list.forEach(function(t) { visit(t); });
+return result;
 }
 
 function getDateRange() {
@@ -637,6 +671,58 @@ else startDrag(e, task, 'move');
 bar.addEventListener('dblclick', function(e) { e.stopPropagation(); if (deckMode) showDeckDetailModal(task); else showTaskModal(task); });
 tlBody.appendChild(bar);
 });
+
+// Dependency arrows (SVG overlay)
+var depSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+depSvg.setAttribute('class', 'dep-svg');
+depSvg.setAttribute('width', timelineWidth);
+depSvg.setAttribute('height', bodyHeight);
+depSvg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;overflow:visible;';
+
+var ftIndexMap = {};
+ft.forEach(function(t, i) { ftIndexMap[t.id] = i; });
+
+ft.forEach(function(task, ri) {
+if (!task.dependencyId) return;
+var pi = ftIndexMap[task.dependencyId];
+if (pi === undefined) return;
+var parentTask = ft[pi];
+
+var parentEndOff = daysBetween(range.start, parentTask.endDate);
+var childStartOff = daysBetween(range.start, task.startDate);
+
+// Arrow from end of parent bar to start of child bar
+var x1 = (parentEndOff + 1) * cellWidth;       // right edge of parent
+var y1 = pi * rowHeight + 12 + 16;             // vertical center of parent bar
+var x2 = childStartOff * cellWidth;             // left edge of child
+var y2 = ri * rowHeight + 12 + 16;             // vertical center of child bar
+
+var midX = x1 + 12;
+if (x2 > x1 + 24) midX = (x1 + x2) / 2;
+
+var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+var d;
+if (x2 >= x1) {
+  // Normal: parent ends before child starts
+  d = 'M' + x1 + ',' + y1 + ' L' + midX + ',' + y1 + ' L' + midX + ',' + y2 + ' L' + x2 + ',' + y2;
+} else {
+  // Overlap: parent bar extends past child start
+  var detourY = Math.min(y1, y2) - 20;
+  if (pi > ri) detourY = Math.max(y1, y2) + 20;
+  d = 'M' + x1 + ',' + y1 + ' L' + (x1 + 12) + ',' + y1 + ' L' + (x1 + 12) + ',' + detourY + ' L' + (x2 - 12) + ',' + detourY + ' L' + (x2 - 12) + ',' + y2 + ' L' + x2 + ',' + y2;
+}
+path.setAttribute('d', d);
+path.setAttribute('class', 'dep-line');
+depSvg.appendChild(path);
+
+// Arrowhead
+var arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+arrow.setAttribute('points', (x2 - 6) + ',' + (y2 - 4) + ' ' + x2 + ',' + y2 + ' ' + (x2 - 6) + ',' + (y2 + 4));
+arrow.setAttribute('class', 'dep-arrow');
+depSvg.appendChild(arrow);
+});
+
+tlBody.appendChild(depSvg);
 
 timeline.appendChild(tlBody);
 gantt.appendChild(timeline);

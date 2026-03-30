@@ -865,6 +865,20 @@
 
 .rh:hover { background: rgba(255,255,255,0.25); }
 
+/* ─── Dependency Lines ─── */
+.dep-svg { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 0; }
+.dep-line {
+    fill: none;
+    stroke: #f97316;
+    stroke-width: 2;
+    stroke-dasharray: 6 3;
+    opacity: 0.7;
+}
+.dep-arrow {
+    fill: #f97316;
+    opacity: 0.8;
+}
+
 /* ─── Modal ─── */
 .modal-overlay {
     position: fixed;
