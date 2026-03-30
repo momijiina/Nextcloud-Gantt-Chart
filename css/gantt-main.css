@@ -564,6 +564,8 @@
     width: 72px;
     text-align: center;
     flex-shrink: 0;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .cat-badge {
@@ -573,6 +575,11 @@
     font-size: 11px;
     font-weight: 600;
     border: 1px solid;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
 }
 
 .tl-assignee-cell {
