@@ -60,6 +60,8 @@ OC.L10N.register(
     "Task Details" : "任务详情",
     "Today" : "今天",
     "Uncategorized" : "未分类",
-    "Open in Deck" : "在 Deck 中打开"
+    "Open in Deck" : "在 Deck 中打开",
+    "Due Date" : "截止日期",
+    "Fullscreen" : "全屏"
 },
 "nplurals=1; plural=0;");

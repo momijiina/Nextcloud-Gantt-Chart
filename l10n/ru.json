@@ -58,5 +58,7 @@
     "Task Details" : "Детали задачи",
     "Today" : "Сегодня",
     "Uncategorized" : "Без категории",
-    "Open in Deck" : "Открыть в Deck"
+    "Open in Deck" : "Открыть в Deck",
+    "Due Date" : "Срок",
+    "Fullscreen" : "Полный экран"
 },"plurals": { } }

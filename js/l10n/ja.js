@@ -60,6 +60,8 @@ OC.L10N.register(
     "Task Details" : "タスク詳細",
     "Today" : "今日",
     "Uncategorized" : "未分類",
-    "Open in Deck" : "Deckで開く"
+    "Open in Deck" : "Deckで開く",
+    "Due Date" : "締切日",
+    "Fullscreen" : "フルスクリーン"
 },
 "nplurals=1; plural=0;");

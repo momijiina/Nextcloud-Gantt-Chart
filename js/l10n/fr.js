@@ -60,6 +60,8 @@ OC.L10N.register(
     "Task Details" : "Détails de la tâche",
     "Today" : "Aujourd'hui",
     "Uncategorized" : "Non classé",
-    "Open in Deck" : "Ouvrir dans Deck"
+    "Open in Deck" : "Ouvrir dans Deck",
+    "Due Date" : "Date d'échéance",
+    "Fullscreen" : "Plein écran"
 },
 "nplurals=2; plural=(n > 1);");

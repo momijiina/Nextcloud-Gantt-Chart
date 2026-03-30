@@ -164,12 +164,19 @@ function simpleMd(text) {
     return '<p>' + s + '</p>';
 }
 
-async function deckApi(path) {
+async function deckApi(path, method, body) {
 var url = OC.generateUrl('/apps/deck/api/v1.0' + path);
-var resp = await fetch(url, {
+var opts = {
+method: method || 'GET',
 headers: { 'Content-Type': 'application/json', 'requesttoken': OC.requestToken, 'OCS-APIRequest': 'true' },
-});
-if (!resp.ok) throw new Error('Deck API error: ' + resp.status);
+};
+if (body) opts.body = JSON.stringify(body);
+var resp = await fetch(url, opts);
+if (!resp.ok) {
+var errMsg = 'Deck API error: ' + resp.status;
+try { var errBody = await resp.json(); errMsg += ' - ' + (errBody.message || JSON.stringify(errBody)); } catch(_) {}
+throw new Error(errMsg);
+}
 return resp.json();
 }
 
@@ -180,12 +187,12 @@ stacks.forEach(function(stack, si) {
 var cards = stack.cards || [];
 cards.forEach(function(card) {
 var endDate, startDate;
-if (card.duedate) {
-endDate = card.duedate.split('T')[0];
-startDate = fmtISO(addDays(new Date(endDate), -7));
-} else {
 var created = card.createdAt ? new Date(card.createdAt * 1000) : new Date();
 startDate = fmtISO(created);
+if (card.duedate) {
+endDate = card.duedate.split('T')[0];
+if (new Date(endDate) < new Date(startDate)) startDate = endDate;
+} else {
 endDate = fmtISO(addDays(created, 14));
 }
 var progress = totalStacks > 1 ? Math.round((si / (totalStacks - 1)) * 100) : 0;
@@ -195,6 +202,8 @@ var labelName = card.labels && card.labels.length > 0 ? card.labels[0].title : s
 var labelColor = card.labels && card.labels.length > 0 ? '#' + card.labels[0].color : null;
 allTasks.push({
 id: 'deck-' + card.id,
+_stackId: stack.id,
+_cardOrder: card.order || 0,
 title: card.title,
 description: card.description || '',
 startDate: startDate,
@@ -375,7 +384,6 @@ if (deckMode && currentDeckBoard) {
 var deckHeader = h('div', { className: 'deck-mode-header' }, [
 h('span', { className: 'deck-mode-icon' }, '\uD83D\uDDC2\uFE0F'),
 h('span', { className: 'deck-mode-title' }, _t('Deck') + ': ' + currentDeckBoard.title),
-h('span', { className: 'deck-mode-badge' }, _t('Read only')),
 ]);
 main.appendChild(deckHeader);
 }
@@ -411,6 +419,7 @@ right.appendChild(searchInput);
 if (!deckMode) {
 right.appendChild(h('button', { className: 'btn-primary', onClick: function() { showTaskModal(null); } }, '\uFF0B ' + _t('Add Task')));
 }
+right.appendChild(h('button', { className: 'btn-fullscreen', onClick: toggleFullscreen, title: _t('Fullscreen') }, '\u26F6'));
 toolbar.appendChild(right);
 main.appendChild(toolbar);
 
@@ -570,6 +579,10 @@ bar.appendChild(h('div', { className: 'rh rh-l' }));
 bar.appendChild(h('div', { className: 'rh rh-r' }));
 
 bar.addEventListener('mousedown', function(e) {
+if (deckMode) {
+if (e.target.classList.contains('rh-r')) startDrag(e, task, 'resize-right');
+return;
+}
 if (e.target.classList.contains('rh-l')) startDrag(e, task, 'resize-left');
 else if (e.target.classList.contains('rh-r')) startDrag(e, task, 'resize-right');
 else startDrag(e, task, 'move');
@@ -615,6 +628,16 @@ var offset = daysBetween(range.start, task.startDate);
 scrollTimelineTo(offset);
 }
 
+function toggleFullscreen() {
+var el = document.getElementById('app-content-gantt') || document.getElementById('gantt-content');
+if (!el) return;
+if (document.fullscreenElement) {
+document.exitFullscreen();
+} else {
+el.requestFullscreen().catch(function() {});
+}
+}
+
 function makeFilterPill(key, label) {
 var catColor = (key !== 'all') ? getCategoryColor(key) : null;
 var style = {};
@@ -630,7 +653,6 @@ onClick: function() { activeFilter = key; renderMain(); },
 }
 
 function startDrag(e, task, mode) {
-if (deckMode) return;
 e.preventDefault();
 dragDateRange = getDateRange();
 dragState = { task: task, mode: mode, x0: e.clientX, origStart: task.startDate, origEnd: task.endDate };
@@ -662,10 +684,20 @@ var changed = t.startDate !== dragState.origStart || t.endDate !== dragState.ori
 dragState = null;
 dragDateRange = null;
 if (changed) {
-saveTaskToServer(t);
+if (deckMode) { saveDeckCardDuedate(t); } else { saveTaskToServer(t); }
 renderMain();
 }
 });
+
+async function saveDeckCardDuedate(task) {
+try {
+var cardId = String(task.id).replace('deck-', '');
+var duedate = task.endDate + 'T00:00:00+00:00';
+await deckApi('/boards/' + currentDeckBoard.id + '/stacks/' + task._stackId + '/cards/' + cardId, 'PUT', {
+title: task.title, description: task.description || '', type: 'plain', order: parseInt(task._cardOrder, 10) || 0, duedate: duedate, owner: OC.currentUser
+});
+} catch (e) { console.error(e); notify(_t('Failed to save')); }
+}
 
 function showProjectModal(project) {
 var isEdit = !!project;
@@ -733,27 +765,53 @@ overlay.addEventListener('click', function(e) { if (e.target === overlay) remove
 
 var dialog = h('div', { className: 'modal-dialog modal-wide' });
 dialog.innerHTML = '<div class="modal-header">'
-+ '<h3>' + _t('Task Details') + '</h3>'
++ '<h3>' + _t('Edit Task') + '</h3>'
 + '<button class="modal-close" id="modal-close-btn">\u2715</button>'
 + '</div>'
 + '<div class="modal-body">'
-+ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Task Name') + '</span><span class="deck-detail-value">' + esc(task.title) + '</span></div>'
-+ (task.description ? '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Description') + '</span><div class="deck-detail-value deck-detail-desc">' + simpleMd(task.description) + '</div></div>' : '')
-+ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Category') + '</span><span class="deck-detail-value"><span class="cat-badge" style="background:' + catInfo.color + '22;color:' + catInfo.color + ';border-color:' + catInfo.color + '">' + esc(catInfo.label) + '</span></span></div>'
++ '<div class="field"><label>' + _t('Task Name') + ' <span class="required">*</span></label>'
++ '<input type="text" id="dk-title" value="' + esc(task.title) + '" /></div>'
++ '<div class="field"><label>' + _t('Description') + '</label>'
++ '<textarea id="dk-desc" rows="4">' + esc(task.description || '') + '</textarea></div>'
++ '<div class="field-row">'
++ '<div class="field"><label>' + _t('Due Date') + '</label>'
++ '<input type="date" id="dk-due" value="' + task.endDate + '" /></div>'
++ '<div class="field"><label>' + _t('Category') + '</label>'
++ '<span class="cat-badge" style="background:' + catInfo.color + '22;color:' + catInfo.color + ';border-color:' + catInfo.color + '">' + esc(catInfo.label) + '</span></div>'
++ '</div>'
 + '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Assignee') + '</span><span class="deck-detail-value">' + esc(task.assignee || _t('None')) + '</span></div>'
-+ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Start Date') + '</span><span class="deck-detail-value">' + task.startDate + '</span></div>'
-+ '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('End Date') + '</span><span class="deck-detail-value">' + task.endDate + '</span></div>'
 + '<div class="deck-detail-row"><span class="deck-detail-label">' + _t('Progress') + '</span><span class="deck-detail-value">' + task.progress + '%</span></div>'
 + '</div>'
 + '<div class="modal-footer">'
-+ '<a class="btn-primary" id="deck-open-btn" href="' + OC.generateUrl('/apps/deck') + '/#/board/' + (currentDeckBoard ? currentDeckBoard.id : '') + '/card/' + cardId + '" target="_blank">' + _t('Open in Deck') + '</a>'
++ '<a class="btn-secondary" id="deck-open-btn" href="' + OC.generateUrl('/apps/deck') + '/#/board/' + (currentDeckBoard ? currentDeckBoard.id : '') + '/card/' + cardId + '" target="_blank">' + _t('Open in Deck') + '</a>'
++ '<div class="modal-footer-right">'
 + '<button class="btn-cancel" id="deck-close-btn">' + _t('Cancel') + '</button>'
-+ '</div>';
++ '<button class="btn-primary" id="deck-save-btn">' + _t('Save') + '</button>'
++ '</div></div>';
 overlay.appendChild(dialog);
 document.body.appendChild(overlay);
 
 document.getElementById('modal-close-btn').onclick = removeModal;
 document.getElementById('deck-close-btn').onclick = removeModal;
+document.getElementById('deck-save-btn').onclick = async function() {
+var title = document.getElementById('dk-title').value.trim();
+if (!title) { notify(_t('Please enter a task name')); return; }
+var desc = document.getElementById('dk-desc').value;
+var dueVal = document.getElementById('dk-due').value;
+var duedate = dueVal ? dueVal + 'T00:00:00+00:00' : null;
+try {
+await deckApi('/boards/' + currentDeckBoard.id + '/stacks/' + task._stackId + '/cards/' + cardId, 'PUT', {
+title: title, description: desc || '', type: 'plain', order: parseInt(task._cardOrder, 10) || 0, duedate: duedate, owner: OC.currentUser
+});
+task.title = title;
+task.description = desc;
+if (dueVal) task.endDate = dueVal;
+removeModal();
+renderMain();
+notify(_t('Task updated'));
+} catch (e) { console.error(e); notify(_t('Failed to save')); }
+};
+document.getElementById('dk-title').focus();
 }
 
 function showTaskModal(task) {
