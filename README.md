@@ -1,6 +1,6 @@
 # Gantt Chart for Nextcloud
 Nextcloud用のガントチャートアプリケーションです。プロジェクト管理をビジュアルなタイムラインで行えます。<br/>
-テスト開発の為、今後の開発は不明<br/>
+ある程度の機能は実装しました<br/>
 **作成者**: momijiina
 
 <img width="1746" height="819" alt="image" src="https://github.com/user-attachments/assets/9e642fa9-004c-449d-888b-64b42acefcb5" />
