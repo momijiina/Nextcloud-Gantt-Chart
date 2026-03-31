@@ -43,6 +43,8 @@ let currentDeckBoard = null;
 let deckMode = false;
 let deckEnabled = localStorage.getItem('gantt-deck-enabled') === 'true';
 let taskSortOrder = localStorage.getItem('gantt-sort-order') || 'default';
+let projectSortOrder = localStorage.getItem('gantt-project-sort') || 'default';
+let projectSearchQuery = '';
 
 async function api(method, path, data) {
 const url = baseUrl + path;
@@ -308,8 +310,66 @@ h('span', null, _t('New project')),
 ]);
 nav.appendChild(h('div', { className: 'nav-new-wrap' }, [newBtn]));
 
+// Project search
+var searchWrap = h('div', { className: 'nav-search-wrap' });
+var projSearchInput = h('input', {
+className: 'nav-search-input',
+type: 'text',
+placeholder: _t('Search projects...'),
+});
+projSearchInput.value = projectSearchQuery;
+var projIsComposing = false;
+projSearchInput.addEventListener('compositionstart', function() { projIsComposing = true; });
+projSearchInput.addEventListener('compositionend', function(e) {
+projIsComposing = false;
+projectSearchQuery = e.target.value;
+renderSidebar();
+var ni = document.querySelector('.nav-search-input');
+if (ni) { ni.focus(); ni.setSelectionRange(ni.value.length, ni.value.length); }
+});
+projSearchInput.addEventListener('input', function(e) {
+if (projIsComposing) return;
+projectSearchQuery = e.target.value;
+renderSidebar();
+var ni = document.querySelector('.nav-search-input');
+if (ni) { ni.focus(); ni.setSelectionRange(ni.value.length, ni.value.length); }
+});
+searchWrap.appendChild(projSearchInput);
+
+// Project sort toggle
+var sortIcons = { 'default': '⇅', 'name-asc': '↑A', 'name-desc': '↓Z', 'newest': '🕐' };
+var sortBtn = h('button', {
+className: 'nav-sort-btn',
+title: _t('Sort'),
+onClick: function() {
+var order = ['default', 'name-asc', 'name-desc', 'newest'];
+var idx = order.indexOf(projectSortOrder);
+projectSortOrder = order[(idx + 1) % order.length];
+localStorage.setItem('gantt-project-sort', projectSortOrder);
+renderSidebar();
+},
+}, sortIcons[projectSortOrder] || '⇅');
+searchWrap.appendChild(sortBtn);
+nav.appendChild(searchWrap);
+
+// Filtered and sorted projects
+var displayProjects = projects.slice();
+if (projectSearchQuery.trim()) {
+var pq = projectSearchQuery.toLowerCase();
+displayProjects = displayProjects.filter(function(p) {
+return p.title && p.title.toLowerCase().indexOf(pq) !== -1;
+});
+}
+if (projectSortOrder === 'name-asc') {
+displayProjects.sort(function(a,b) { return (a.title || '').localeCompare(b.title || ''); });
+} else if (projectSortOrder === 'name-desc') {
+displayProjects.sort(function(a,b) { return (b.title || '').localeCompare(a.title || ''); });
+} else if (projectSortOrder === 'newest') {
+displayProjects.sort(function(a,b) { return (b.id || 0) - (a.id || 0); });
+}
+
 var list = h('div', { className: 'nav-list' });
-projects.forEach(function(p) {
+displayProjects.forEach(function(p) {
 var active = currentProject && currentProject.id === p.id;
 var item = h('div', {
 className: 'nav-item' + (active ? ' active' : ''),

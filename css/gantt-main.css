@@ -56,6 +56,41 @@
 
 .nav-new-wrap { padding: 12px 16px; }
 
+.nav-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 16px 10px;
+}
+.nav-search-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fff;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.nav-search-input:focus { border-color: #6366f1; }
+.nav-sort-btn {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    transition: background 0.15s, border-color 0.15s;
+}
+.nav-sort-btn:hover { background: #f1f5f9; border-color: #6366f1; color: #6366f1; }
+
 .nav-new-btn {
     display: flex;
     align-items: center;
