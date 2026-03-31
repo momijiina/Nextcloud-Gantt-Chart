@@ -353,6 +353,9 @@ renderSidebar();
 searchWrap.appendChild(sortBtn);
 nav.appendChild(searchWrap);
 
+// Scrollable area for project list and deck
+var navScrollArea = h('div', { className: 'nav-scroll-area' });
+
 // Filtered and sorted projects
 var displayProjects = projects.slice();
 if (projectSearchQuery.trim()) {
@@ -385,11 +388,11 @@ h('button', { className: 'nav-act-btn danger', title: _t('Delete'), onClick: fun
 ]);
 list.appendChild(item);
 });
-nav.appendChild(list);
+navScrollArea.appendChild(list);
 
 if (deckEnabled && deckBoards.length > 0) {
-nav.appendChild(h('div', { className: 'nav-separator' }));
-nav.appendChild(h('div', { className: 'nav-section-header' }, [
+navScrollArea.appendChild(h('div', { className: 'nav-separator' }));
+navScrollArea.appendChild(h('div', { className: 'nav-section-header' }, [
 h('span', { className: 'nav-section-icon' }, '\uD83D\uDDC2\uFE0F'),
 h('span', { className: 'nav-section-title' }, _t('Deck integration')),
 ]));
@@ -405,8 +408,10 @@ h('span', { className: 'nav-item-name' }, board.title),
 ]);
 deckList.appendChild(item);
 });
-nav.appendChild(deckList);
+navScrollArea.appendChild(deckList);
 }
+
+nav.appendChild(navScrollArea);
 
 // Settings button at bottom
 var settingsArea = h('div', { className: 'nav-settings' });
