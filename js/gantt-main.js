@@ -37,6 +37,7 @@ let cellWidth = 44;
 const rowHeight = 56;
 let dragState = null;
 let dragDateRange = null;
+let dragFilteredTasks = null;
 let scrollLeft = 0;
 let deckBoards = [];
 let currentDeckBoard = null;
@@ -563,7 +564,7 @@ right.appendChild(h('button', { className: 'btn-fullscreen', onClick: toggleFull
 toolbar.appendChild(right);
 main.appendChild(toolbar);
 
-var ft = getFilteredTasks();
+var ft = dragState && dragFilteredTasks ? dragFilteredTasks : getFilteredTasks();
 
 if (ft.length === 0) {
 main.appendChild(h('div', { className: 'empty-tasks' }, _t('No tasks. Add a task to get started.')));
@@ -719,6 +720,7 @@ bar.appendChild(h('div', { className: 'rh rh-l' }));
 bar.appendChild(h('div', { className: 'rh rh-r' }));
 
 bar.addEventListener('mousedown', function(e) {
+if (e.button !== 0) return;
 if (deckMode) {
 if (e.target.classList.contains('rh-r')) startDrag(e, task, 'resize-right');
 return;
@@ -790,7 +792,24 @@ main.appendChild(gantt);
 
 var tlEl = document.getElementById('gantt-timeline');
 if (tlEl) tlEl.scrollLeft = scrollLeft;
-if (tlEl) tlEl.addEventListener('scroll', function() { scrollLeft = tlEl.scrollLeft; });
+if (tlEl) tlEl.addEventListener('scroll', function() {
+scrollLeft = tlEl.scrollLeft;
+// Sync vertical scroll: timeline -> task list
+var taskListEl = document.querySelector('.task-list');
+if (taskListEl && taskListEl.scrollTop !== tlEl.scrollTop) {
+taskListEl.scrollTop = tlEl.scrollTop;
+}
+});
+// Sync vertical scroll: task list -> timeline
+var taskListEl = document.querySelector('.task-list');
+if (taskListEl) {
+taskListEl.addEventListener('scroll', function() {
+var tl2 = document.getElementById('gantt-timeline');
+if (tl2 && tl2.scrollTop !== taskListEl.scrollTop) {
+tl2.scrollTop = taskListEl.scrollTop;
+}
+});
+}
 if (pendingScrollTarget) {
   var target = pendingScrollTarget;
   pendingScrollTarget = null;
@@ -847,6 +866,7 @@ onClick: function() { activeFilter = key; renderMain(); },
 function startDrag(e, task, mode) {
 e.preventDefault();
 dragDateRange = getDateRange();
+dragFilteredTasks = getFilteredTasks();
 dragState = { task: task, mode: mode, x0: e.clientX, origStart: task.startDate, origEnd: task.endDate };
 document.body.style.cursor = mode === 'move' ? 'grabbing' : 'col-resize';
 }
@@ -875,6 +895,7 @@ var t = dragState.task;
 var changed = t.startDate !== dragState.origStart || t.endDate !== dragState.origEnd;
 dragState = null;
 dragDateRange = null;
+dragFilteredTasks = null;
 if (changed) {
 if (deckMode) { saveDeckCardDuedate(t); } else { saveTaskToServer(t); }
 renderMain();

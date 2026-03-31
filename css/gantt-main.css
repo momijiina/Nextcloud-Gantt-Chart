@@ -610,6 +610,8 @@
     border-right: 2px solid #e2e8f0;
     overflow-y: auto;
     background: #fff;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .tl-header {
@@ -751,6 +753,7 @@
     position: relative;
     height: 28px;
     border-bottom: 1px solid #e2e8f0;
+    box-sizing: border-box;
 }
 
 .tl-month-cell {
@@ -1192,6 +1195,4 @@
 .timeline::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 .timeline::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-.task-list::-webkit-scrollbar { width: 6px; }
-.task-list::-webkit-scrollbar-track { background: transparent; }
-.task-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+.task-list::-webkit-scrollbar { display: none; }
